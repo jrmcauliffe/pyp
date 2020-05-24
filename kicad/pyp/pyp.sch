@@ -285,10 +285,10 @@ F 3 "" H 6600 5400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:Battery Batt1
+L Device:Battery Bat1
 U 1 1 5EC6DDF5
 P 6600 5200
-F 0 "Batt1" H 6708 5246 50  0000 L CNN
+F 0 "Bat1" H 6708 5246 50  0000 L CNN
 F 1 "3V" H 6708 5155 50  0000 L CNN
 F 2 "Connector_Wire:SolderWire-0.1sqmm_1x02_P3.6mm_D0.4mm_OD1mm" V 6600 5260 50  0001 C CNN
 F 3 "~" V 6600 5260 50  0001 C CNN
