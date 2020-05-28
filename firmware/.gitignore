@@ -1,6 +1,2 @@
 /Release
-.cssproject
-.cproject
-/.launches
-.project
-/.settings
+/Debug
