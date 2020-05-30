@@ -47,15 +47,15 @@ void main(void)
 __interrupt void Timer_A (void)
 {
 
-    // Increment timeout counter
+    // Decrement timeout counters
     ticks -= 1;
     if(ticks == 0) {
         ticks = TICKSPERSEC;
         seconds -= 1;
     }
 
-    // Fade out near end
-     if(seconds < gamma[intensity]) TACCR1 = seconds;
+    // Simple fade out near end
+    if(seconds < gamma[intensity]) TACCR1 = seconds;
 
     // Debounce button press
     button_state = ( button_state << 1 ) | (P1IN & BIT3) | 0xE000;
