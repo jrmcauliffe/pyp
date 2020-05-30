@@ -2,32 +2,30 @@
 #define timeout
 
 unsigned int gamma[5];
-unsigned char intensity;
+ int intensity;
 unsigned int button_state;                 // Used to track debounce state of button
-unsigned int ticks_remaining;
-
+unsigned int ticks;
 
 void main(void)
 {
     // Approx 25, 50, 75 and 100% pwm brightness
-    gamma[0] = 625;
-    gamma[1] = 2500;
-    gamma[2] = 5625;
-    gamma[3] = 10000;
-    gamma[4] = 0;      // Off and mark for sleep
+    gamma[0] = 0;
+    gamma[1] = 625;
+    gamma[2] = 2500;
+    gamma[3] = 5625;
+    gamma[4] = 10000;
 
-    ticks_remaining = 500;  // Countdown timer
+    ticks = 0;         // Clock tick counter
 
-    intensity = 0;    // start with dimmest 'on' value
+    intensity = 1;    // start with dimmest 'on' value
 
     WDTCTL = WDTPW + WDTHOLD;     // Stop WDT
 
-    // Initalise all pins to output to reduce power consumption on unused pins
     P1DIR = 0xF7;                  // configure P1.0 and P1.6 as output, P1.3 as input
-    P1OUT = 0x08;                  //Select pull-up mode for P1.3
-    P1SEL |= BIT6;                  // configure P1.6 as special (timer)
+    P1OUT = BIT3;                  //Select pull-up mode for P1.3
+    P1SEL |= BIT6;                 // configure P1.6 as special (timer)
     P1REN |= BIT3;                 // Enable internal pull-up/down resistors
-    P2DIR = 0xFF;
+    P2DIR = 0xFF;                  // Set P2 for lowest power draw
     P2OUT = 0x00;
 
     P1IE |= BIT3;                   // P1.3 IE
@@ -37,12 +35,12 @@ void main(void)
     // Timer A configuration
 	TACTL = 0x210;
     TACCR0 = 10000;
-    TACCR1 = gamma[0];
+    TACCR1 = gamma[intensity];
     TACCTL0 = 0x90;
     TACCTL1 = 0x10E0;
 
-    _BIS_SR(CPUOFF + GIE);          // Enter LPM0 w/ interrupt
-
+    _BIS_SR(CPUOFF + GIE);          // Enter LPM0 w/ global interrupts
+    // while(1);
 }
 
 // Timer A0 interrupt service routine
@@ -50,30 +48,35 @@ void main(void)
 __interrupt void Timer_A (void)
 {
 
-
     // Debounce button press
-    button_state = ( button_state << 1 ) | (P1IN & BIT3)| 0xE000;
+    button_state = ( button_state << 1 ) | (P1IN & BIT3) | 0xE000;
     if(button_state == 0xF000) {
+        ticks = 0;
         intensity += 1;
-        TACCR1 = gamma[intensity];
     }
 
-//    // Decrement and check count down timer
-    ticks_remaining -= 1;
-    if(ticks_remaining == 0) {
-           TACCR1 = 0 ;   //Turn off LED
-          _BIS_SR(LPM3);
 
-   }
+    if(intensity == 5 || ticks == 500) {
+           P1OUT &= ~BIT6;  // Set off
+           P1SEL &= ~BIT6;
+           intensity = 0;
+           ticks = 0;       // Reset tick counter
+           //_BIS_SR_IRQ(LPM4);   // Sleep
+    } else  TACCR1 = gamma[intensity];
 
-
+    ticks += 1;
 }
+
 // Port 1 interrupt service routine
+// Just need this to wake up
+// All button code handled by timer ISR
 #pragma vector=PORT1_VECTOR
 __interrupt void Port_1(void)
 {
-   P1IFG &= ~BIT3;                      // P1.3 IFG cleared
-   if(intensity == 4) intensity = 0;    // Default brightness
-
-
+   P1IFG &= ~BIT3;         // P1.3 IFG cleared
+//  P1OUT ^= BIT0;          // Toggle Red LED
+   if(!(P1SEL & BIT6)) {
+       P1SEL |= BIT6;        // Reenable led for output from timer
+      _BIS_SR_IRQ(CPUOFF);   // Put cpu back in LPM0 for timer
+   }
 }
