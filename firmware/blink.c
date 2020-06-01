@@ -1,6 +1,6 @@
 #include <msp430.h>
 #define TICKSPERSEC 1000    // Approx 1ms/tick
-#define TIMEOUT 60          // Approx 1 hr at 1ms/tick (1Mhz clock)
+#define TIMEOUT 3600        // Approx 1 hr at 1ms/tick (1Mhz clock)
 
 unsigned char intensity;    // Current intensity setting
 unsigned int gamma[4];      // Convert intensity to gamma corrected clock
@@ -33,11 +33,11 @@ void main(void)
     P1IFG &= ~BIT3;                 // P1.3 IFG cleared
 
     // Timer A configuration
-	TACTL = 0x210;
+    TACTL =  TASSEL_2 + MC_1;
     TACCR0 = gamma[3];              // Gamma [3] will be 100% duty cycle
     TACCR1 = gamma[intensity];      // Initial brightness value
-    TACCTL0 = 0x90;
-    TACCTL1 = 0x10E0;
+    TACCTL0 = OUTMOD_4 + CCIE;     // Toggle + IE
+    TACCTL1 = CCIS0 + OUTMOD_7;
 
     _BIS_SR(CPUOFF + GIE);          // Enter LPM0 w/ global interrupts
 }
@@ -69,7 +69,7 @@ __interrupt void Timer_A (void)
     if(intensity == 4 || seconds == 0) {
         ticks = TICKSPERSEC;          // Reset tick counter
         seconds = TIMEOUT;
-        TACCR0 = 0;                // Stop TimerA
+        TACTL =  0x0000;           // Stop TimerA
         P1SEL &= ~BIT6;            // Disable special function for P1.6 (led)
         P1OUT &= ~BIT6;            // Set output low for P1.6 (led)
        intensity = 0;
@@ -84,12 +84,10 @@ __interrupt void Timer_A (void)
 #pragma vector=PORT1_VECTOR
 __interrupt void Port_1(void)
 {
-    // Force LMP0
-
-
+    P1IFG &= ~BIT3;          // P1.3 IFG cleared
+    // Switch back to LMP0
     __bic_SR_register_on_exit(LPM4_bits);
     __bis_SR_register_on_exit(LPM0_bits);
-    P1SEL |= BIT6;      // Set P1.6 back to special function timer output
-    TACCR0 = gamma[3];  // Restart timer
-     P1IFG &= ~BIT3;         // P1.3 IFG cleared
+    P1SEL |= BIT6;            // Set P1.6 back to special function timer output
+    TACTL =  TASSEL_2 + MC_1; // Restart timer
 }
