@@ -1,5 +1,5 @@
 #include <msp430.h>
-#define TIMEOUT 60      // Approx 1 hr (~1Mhz clock)
+#define TIMEOUT 3600        // Approx 1 hr (~1Mhz clock)
 
 unsigned char intensity;    // Current intensity setting
 unsigned int gamma[4];      // Convert intensity to gamma corrected clock
