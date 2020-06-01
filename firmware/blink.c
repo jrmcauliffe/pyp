@@ -1,6 +1,6 @@
 #include <msp430.h>
 #define TICKSPERSEC 1000    // Approx 1ms/tick
-#define TIMEOUT 1001     // Approx 1 hr at 1ms/tick (1Mhz clock)
+#define TIMEOUT 60          // Approx 1 hr at 1ms/tick (1Mhz clock)
 
 unsigned char intensity;    // Current intensity setting
 unsigned int gamma[4];      // Convert intensity to gamma corrected clock
@@ -9,11 +9,11 @@ unsigned int ticks;         // Track on time
 unsigned int seconds;       // Splitting avoids long values
 void main(void)
 {
-    // Approx 25, 50, 75 and 100% pwm brightness
-    gamma[0] = 62;
-    gamma[1] = 250;
-    gamma[2] = 562;
-    gamma[3] = 1000;
+    // Approx 25, 50, 75 and 100% pwm brightness with simple gamma calc
+    gamma[0] = 70;
+    gamma[1] = 280;
+    gamma[2] = 629;
+    gamma[3] = 1118;      // Will give 1khz clock on device tested
 
     ticks = TICKSPERSEC;  // Clock tick counter
     seconds = TIMEOUT;
@@ -34,7 +34,7 @@ void main(void)
 
     // Timer A configuration
 	TACTL = 0x210;
-    TACCR0 = gamma[3];              // So gamma [3] will be 100% duty cycle
+    TACCR0 = gamma[3];              // Gamma [3] will be 100% duty cycle
     TACCR1 = gamma[intensity];      // Initial brightness value
     TACCTL0 = 0x90;
     TACCTL1 = 0x10E0;
