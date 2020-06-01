@@ -69,8 +69,8 @@ __interrupt void Timer_A (void)
     if(seconds < gamma[intensity]) TACCR1 = seconds;
 
     // Debounce button press
-    button_state = ( button_state << 1 ) | (P1IN & BIT3) | 0xE000;
-    if(button_state == 0xF000) {
+    button_state = ( button_state << 1 ) | (P1IN & BIT3) | 0xFE00;
+    if(button_state == 0xFF00) {
         intensity += 1;
         start();
     }
